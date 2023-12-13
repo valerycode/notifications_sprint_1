@@ -1,0 +1,12 @@
+fastapi==0.90
+python-dotenv==1.0.0
+uvicorn[standard]==0.20.0
+aio-pika==9.0.4
+orjson==3.8.7
+pydantic==1.10.5
+backoff==2.2.1
+
+opentelemetry-api==1.15.0
+opentelemetry-sdk==1.15.0
+opentelemetry-instrumentation-fastapi==0.36b0
+opentelemetry-exporter-jaeger==1.15.0

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" type="text/css" href="static/demo.css" />
+<link rel="stylesheet" type="text/css" href="static/animate-custom.css" />
+<link rel="stylesheet" type="text/css" href="static/style.css" />
+<style>
+    .site-header__wrapper {
+        display: flex;
+        border-radius: 5px;
+        justify-content: space-between;
+        background: rgb(93, 113, 138);
+        align-items: center;
+        height: 80px;
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+    .site-header1 {
+    display: flex;
+    background: rgb(93, 113, 138);
+    justify-content: space-between;
+    align-items: center;
+    height: 80px;
+    padding: 15px;
+    }
+    .c-button {
+
+        border: 2;
+        border-radius: 5px;
+        background: #4676D7;
+        color: #fff;
+        padding: 8px 16px;
+        font-size: 20px;
+        }
+    .content {
+        /* float: left; */
+
+        border-radius: 5px;
+        position: absolute;
+        top: 90px;
+        right: 10px;
+        bottom: 25px;
+        left: 10px;
+        margin: 1;
+        padding: 10px;
+
+        background: rgb(100,200,200);
+
+    }
+    .footer {
+        background: #000;
+        border-radius: 5px;
+        position: absolute;
+        height: 20px;
+        right: 5px;
+        bottom: 0px;
+        left: 5px;
+        margin: 5;
+        clear: both; /* запрещаем обтекание с обоих сторон, блок выводится с новой строки */
+        color: #ccc;
+    }
+    .button-wrapper {
+        text-align: end; /* end - это, в LTR-языках, то же самое, что и right */
+
+    .sign_form {
+    background: green;
+    border: 2;
+    border-radius: 5px;
+    width : 200px;
+    height: 200px;
+    }
+    }
+
+</style>
+<script language="javascript">
+    function do_login(form){
+        var formData = new FormData(form);
+        json_data = JSON.stringify(Object.fromEntries(formData));
+        send_login_post(json_data);
+        return false;
+    }
+
+    function send_login_post(json_data){
+        //open the request
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST','/auth/v1/login');
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        //send the form data
+        xhr.send(json_data);
+
+        xhr.onload = function() {
+            if (xhr.status != 200) { // analyze HTTP status of the response
+                alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+            } else { // show the result
+                 window.location.href = "/";
+                }
+            };
+
+        //Fail the onsubmit to avoid page refresh.
+        return false;
+    }
+
+    function do_reg(form) {
+        var xhr = new XMLHttpRequest();
+        var formData = new FormData(form);
+        //open the request
+        xhr.open('POST','/auth/v1/users/me');
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        //send the form data
+        data = {
+                'email': formData.get('emailsignup'),
+                'name': formData.get('usernamesignup'),
+                'password': formData.get('passwordsignup')
+        }
+        xhr.send(JSON.stringify(data));
+
+        xhr.onload = function() {
+            if (xhr.status != 201) { // analyze HTTP status of the response
+                alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
+            } else { // show the result
+                 json_data = JSON.stringify(data);
+                 send_login_post(json_data);
+                 //window.location.href = "/login";
+
+                }
+            };
+
+        //Fail the onsubmit to avoid page refresh.
+        return false;
+
+    };
+    function login(provider){
+        //alert(provider);
+        if (provider=='Yandex') {
+         window.location.href="/auth/v1/authorize/yandex"
+        } else
+        if (provider=='VK') {
+            window.location.href="/auth/v1/authorize/vk"
+        } else if (provider=='Google') {
+            window.location.href="/auth/v1/authorize/google"
+        }
+
+    };
+
+    function bodyOnloadHandler() {
+        const user = {};
+        var log_form = document.getElementById('login_form');
+        log_form.onsubmit = function(event){
+            do_login(log_form);
+            return false;
+        }
+        var reg_form = document.getElementById('reg_form');
+        reg_form.onsubmit = function(event){
+            do_reg(reg_form);
+            return false;
+        }
+    }
+</script>
+<head>
+    <meta charset="UTF-8">
+    <title>PRACTIX</title>
+</head>
+<body   onload="bodyOnloadHandler()">
+<header class="site-header">
+    <div class="wrapper site-header__wrapper">
+    <img src="/static/logo.jpg" width="80" height="80" alt="PRACTIX" />
+    <p style="font-size:30px; color:white; font-weight: bold; ">PRACTIX</p>
+    <nav class="nav">
+    </nav>
+        <div>
+            <input type="button" class="c-button" value="Yandex" onclick="login('Yandex')" />
+            <input type="button" class="c-button" value="VK" onclick="login('VK')"/>
+            <input type="button" class="c-button" value="-Google" onclick="login('Google')" />
+        </div>
+
+    </div>
+</header>
+    <div class="content">
+        <div class="container">
+            <!-- hidden anchor to stop jump http://www.css3create.com/Astuce-Empecher-le-scroll-avec-l-utilisation-de-target#wrap4  -->
+            <a class="hiddenanchor" id="toregister"></a>
+            <a class="hiddenanchor" id="tologin"></a>
+            <div id="wrapper">
+                <p></p>
+                <div id="login" class="animate form">
+                            <form  id="login_form" action="" autocomplete="on">
+                                <h1>Log in</h1>
+                                <p>
+                                    <label for="username" class="uname" data-icon="u" > Your email </label>
+                                    <input id="username" name="email" required="required" type="text" placeholder="mymail@mail.com"/>
+                                </p>
+                                <p>
+                                    <label for="password" class="youpasswd" data-icon="p"> Your password </label>
+                                    <input id="password" name="password" required="required" type="password" placeholder="eg. X8df!90EO" />
+                                </p>
+                                <p class="keeplogin">
+									<input type="checkbox" name="loginkeeping" id="loginkeeping" value="loginkeeping" />
+									<label for="loginkeeping">Keep me logged in</label>
+								</p>
+
+                                <p class="login button">
+                                    <input type="submit" value="Login" />
+								</p>
+
+                                <p class="change_link">
+                                    Not a member yet ?
+									<a href="#toregister" class="to_register">Join us</a>
+								</p>
+                            </form>
+                        </div>
+                <div id="register" class="animate form">
+                            <form id="reg_form" action="" autocomplete="on">
+                                <h1> Sign up </h1>
+                                <p>
+                                    <label for="usernamesignup" class="uname" data-icon="u">Your username</label>
+                                    <input id="usernamesignup" name="usernamesignup" required="required" type="text" placeholder="mysuperusername690" />
+                                </p>
+                                <p>
+                                    <label for="emailsignup" class="youmail" data-icon="e" > Your email</label>
+                                    <input id="emailsignup" name="emailsignup" required="required" type="text" placeholder="mysupermail@mail.com"/>
+                                </p>
+                                <p>
+                                    <label for="passwordsignup" class="youpasswd" data-icon="p">Your password </label>
+                                    <input id="passwordsignup" name="passwordsignup" required="required" type="password" placeholder="eg. X8df!90EO"/>
+                                </p>
+<!--                                <p>-->
+<!--                                    <label for="passwordsignup_confirm" class="youpasswd" data-icon="p">Please confirm your password </label>-->
+<!--                                    <input id="passwordsignup_confirm" name="passwordsignup_confirm" required="required" type="password" placeholder="eg. X8df!90EO"/>-->
+<!--                                </p>-->
+                                <p class="signin button">
+									<input type="submit" value="Sign up"/>
+								</p>
+                                <p class="change_link">
+									Already a member ?
+									<a href="#tologin" class="to_register"> Go and log in </a>
+								</p>
+                            </form>
+                        </div>
+            </div>
+        </div>
+    </div>
+<div class="footer" align="center">2023</div>
+
+</body>
+</html>

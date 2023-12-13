@@ -1,0 +1,6 @@
+black==22.10.0
+flake8==6.0.0
+isort==5.10.1
+freezegun==1.2.2
+pytest==7.2.0
+pytest-dotenv==0.5.2

@@ -1,0 +1,748 @@
+openapi: 3.0.3
+info:
+  title: Authentication service
+  description: Authentication service
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Development server
+tags:
+  - name: auth
+    description: Authentication related operations
+  - name: roles
+    description: Operations with user roles
+  - name: users
+    description: User related operations
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Role:
+      type: object
+      description: Role model
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    RolesList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Role'
+    RoleNew:
+      type: object
+      description: Model for creating new role
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    RoleUpdate:
+      type: object
+      description: Model for updating role
+      required:
+        - name
+      properties:
+        name:
+          type: string
+    User:
+      type: object
+      description: User model
+      required:
+        - id
+        - email
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+    UserNew:
+      type: object
+      description: Model for creating new user
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+    UserUpdate:
+      type: object
+      description: Model for updating user
+      properties:
+        password:
+          type: string
+        name:
+          type: string
+    UserLoginRequest:
+      type: object
+      description: Data for login of existing user
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    ApiErrorResponse:
+      type: object
+      description: Error response model
+      required:
+        - msg
+      properties:
+        msg:
+          type: string
+    TokensResponse:
+      type: object
+      description: Access and refresh tokens model
+      required:
+        - access_token
+        - refresh_token
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+    UserAction:
+      type: object
+      description: User actions model (history of logins)
+      required:
+        - id
+        - user_id
+        - device_name
+        - timestamp
+        - action
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        device_name:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        action:
+          type: string
+    UserActionsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/UserAction'
+    UserSession:
+      type: object
+      description: User session model (active sessions)
+      required:
+        - device_name
+        - remote_ip
+        - login_at
+        - active_at
+      properties:
+        device_name:
+          type: string
+        remote_ip:
+          type: string
+        login_at:
+          type: string
+          format: date-time
+        active_at:
+          type: string
+          format: date-time
+    UserSessionsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/UserSession'
+
+  responses:
+    200-JWTTokens:
+      description: Response with access and refresh token
+      headers:
+        Set-Cookie:
+          description: refresh token in cookie
+          schema:
+            type: string
+        #Set-Cookie:
+        #  description: csrf token in cookie
+        #  schema:
+        #    type: string
+        WWW-Authenticate:
+          description: access token
+          schema:
+            type: string
+      # TODO убрать токены? для браузера куки и заголовки
+      content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokensResponse'
+    400-BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    401-Unauthorized:
+      description: Invalid or missing access token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    404-NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    409-Conflict:
+      description: Conflict - object already exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    422-UnprocessableEntity:
+      description: Invalid parameter value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+  parameters:
+    UserIdParam:
+      name: user_id
+      in: path
+      description: UUID of user
+      required: true
+      schema:
+        type: string
+        format: uuid
+    RoleIdParam:
+      name: role_id
+      in: path
+      description: UUID of role
+      required: true
+      schema:
+        type: string
+        format: uuid
+paths:
+  /auth/v1/login:
+    post:
+      tags:
+        - auth
+      summary: Log in user, get access and refresh tokens
+      description: Log in user, get access and refresh tokens
+      operationId: login
+      requestBody:
+        description: Login data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/200-JWTTokens'
+        '400':
+          $ref: '#/components/responses/400-BadRequest'
+  /auth/v1/refresh:
+    post:
+      tags:
+        - auth
+      summary: Get new access and refresh tokens
+      description: Get new access and refresh tokens
+      operationId: refresh
+      parameters:
+        - in: cookie
+          name: refresh_token_cookie
+          schema:
+            type: string
+        - in: header
+          name: X-CSRF-TOKEN
+          schema:
+            type: string
+      # TODO добавить requestBody (для мобильных приложений)
+      responses:
+        '200':
+          $ref: '#/components/responses/200-JWTTokens'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/logout:
+    post:
+      tags:
+        - auth
+      summary: Log out user
+      description: Log out user
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Succesful operation
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+
+  /auth/v1/roles:
+    get:
+      tags:
+        - roles
+      summary: Get list of all roles
+      description: Get list of all roles
+      operationId: get_roles
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+    post:
+      tags:
+        - roles
+      summary: Create a new role
+      description: Create a new role
+      operationId: create_role
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        description: Data for creating a new role
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleNew'
+      responses:
+        '201':
+          description: A new role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleNew'
+        '400':
+          $ref: '#/components/responses/400-BadRequest'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '409':
+          $ref: '#/components/responses/409-Conflict'
+  /auth/v1/roles/{role_id}:
+    parameters:
+      - $ref: '#/components/parameters/RoleIdParam'
+    get:
+      tags:
+       - roles
+      summary: Get role by id
+      description: Get role by id
+      operationId: get_role
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: An existing role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+    put:
+      tags:
+       - roles
+      summary: Update role
+      description: Update role
+      operationId: update_role
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        description: Data for updating role
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdate'
+      responses:
+        '200':
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '400':
+          $ref: '#/components/responses/400-BadRequest'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+    delete:
+      tags:
+        - roles
+      summary: Delete role
+      description: Delete role
+      operationId: delete_role
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '204':
+          description: Role deleted
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users:
+    post:
+      tags:
+        - users
+      summary: Register new user
+      description: Register new user
+      operationId: create_user
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        description: User registration data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNew'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          $ref: '#/components/responses/400-BadRequest'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '409':
+          $ref: '#/components/responses/409-Conflict'
+  /auth/v1/users/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags:
+       - users
+      summary: Get user by id
+      description: Get user by id
+      operationId: get_user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: An existing user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+    put:
+      tags:
+       - users
+      summary: Update user
+      description: Update user
+      operationId: update_user
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: Data for updating user
+        required: true
+        content:
+          application/json:
+            schema:
+             $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/{user_id}/roles:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags:
+        - users
+      summary: Get list of user roles
+      description: Get list of user roles
+      operationId: get_user_roles
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/{user_id}/roles/{role_id}:
+    parameters:
+      - $ref: '#/components/parameters/RoleIdParam'
+      - $ref: '#/components/parameters/UserIdParam'
+    post:
+      tags:
+        - users
+      summary: Add a role to user
+      description: Add a role to user
+      operationId: add_user_role
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '201':
+          description: A role added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+    delete:
+      tags:
+        - users
+      summary: Remove role from user
+      description: Remove role from user
+      operationId: delete_user_role
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Role deleted
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/{user_id}/history:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags:
+        - users
+      summary: Get user actions history
+      description: Get user actions history
+      operationId: get_user_history
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of action records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActionsList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/{user_id}/sessions:
+    parameters:
+      - $ref: '#/components/parameters/UserIdParam'
+    get:
+      tags:
+        - users
+      summary: Get active sessions of user
+      description: Get active sessions of user
+      operationId: get_user_sessions
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSessionsList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/me:
+    get:
+      tags:
+        - users
+      summary: Get logged in user
+      description: Get logged in user
+      operationId: get_logged_user
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: An existing user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+    post:
+      tags:
+        - users
+      summary: Register new user
+      description: Register new user
+      operationId: create_user_me_endpoint
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        description: User registration data
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNew'
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          $ref: '#/components/responses/400-BadRequest'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '409':
+          $ref: '#/components/responses/409-Conflict'
+    put:
+      tags:
+        - users
+      summary: Update logged in user
+      description: Update logge in  user
+      operationId: update_logged_user
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        description: Data for updating user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/me/roles:
+    get:
+      tags:
+        - users
+      summary: Get list of logged in user roles
+      description: Get list of logged in user roles
+      operationId: get_logged_user_roles
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/me/history:
+    get:
+      tags:
+        - users
+      summary: Get actions history of logged in user
+      description: Get actions history of logged in user
+      operationId: get_logged_user_history
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: List of action records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActionsList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'
+  /auth/v1/users/me/sessions:
+    get:
+      tags:
+        - users
+      summary: Get active sessions of logged in user
+      description: Get active sessions of logged in user
+      operationId: get_logged_user_sessions
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSessionsList'
+        '401':
+          $ref: '#/components/responses/401-Unauthorized'
+        '404':
+          $ref: '#/components/responses/404-NotFound'
+        '422':
+          $ref: '#/components/responses/422-UnprocessableEntity'

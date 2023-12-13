@@ -1,0 +1,8 @@
+/.env
+/.idea
+/service_notice/api/.idea
+
+/venv/
+**/__pycache__/
+.env
+.idea/

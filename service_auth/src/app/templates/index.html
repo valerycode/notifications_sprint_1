@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<style>
+    .site-header__wrapper {
+        display: flex;
+        border-radius: 5px;
+        justify-content: space-between;
+        background: rgb(93, 113, 138);
+        align-items: center;
+        height: 80px;
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+    .site-header1 {
+    display: flex;
+    background: rgb(93, 113, 138);
+    justify-content: space-between;
+    align-items: center;
+    height: 80px;
+    padding: 15px;
+    }
+    .c-button {
+
+        border: 2;
+        border-radius: 5px;
+        background: #4676D7;
+        color: #fff;
+        padding: 8px 16px;
+        font-size: 20px;
+        }
+    .content {
+        /* float: left; */
+
+        border-radius: 5px;
+        position: absolute;
+        top: 90px;
+        right: 10px;
+        bottom: 25px;
+        left: 10px;
+        margin: 15;
+
+        background: rgb(100,200,200);
+
+    }
+    .footer {
+        background: #000;
+        border-radius: 5px;
+        position: absolute;
+        height: 20px;
+        right: 5px;
+        bottom: 0px;
+        left: 5px;
+        margin: 5;
+        clear: both; /* запрещаем обтекание с обоих сторон, блок выводится с новой строки */
+        color: #ccc;
+    }
+    .button-wrapper {
+        text-align: end; /* end - это, в LTR-языках, то же самое, что и right */
+    }
+</style>
+<script language="javascript">
+    const user = {id: "{{user_id}}", name: "{{user_name}}" };
+
+    function doLogin(){
+        window.location.href = "/login#tologin";
+    }
+
+    function doLogout(){
+        window.location.href = "/auth/v1/logout";
+        //var xhr = new XMLHttpRequest();
+        //xhr.open('POST','/auth/logout')
+        //xhr.setRequestHeader("Content-Type", "application/json");
+
+        //send the form data
+        //xhr.send();
+        // xhr.onload = function() {
+         //   window.location.href = "/";
+         //}
+
+
+    }
+
+    function bodyOnloadHandler() {
+        let sign_button = document.getElementById("sign_button");
+        let user_name = document.getElementById("user_name");
+            if (user.id) {
+                sign_button.innerText='Logout'
+                sign_button.onclick=doLogout
+                user_name.innerText = user.name
+            }
+            else
+            {
+                sign_button.innerText="Login"
+                sign_button.onclick=doLogin
+                user_name.innerText = user.name
+            }
+            }
+</script>
+<head>
+    <meta charset="UTF-8">
+    <title>PRACTIX</title>
+</head>
+<body   onload="bodyOnloadHandler()">
+<header class="site-header">
+    <div class="wrapper site-header__wrapper">
+    <img src="/static/logo.jpg" width="80" height="80" alt="PRACTIX" />
+    <p style="font-size:30px; color:white; font-weight: bold; ">PRACTIX</p>
+    <nav class="nav">
+    </nav>
+        <div  class="button-wrapper">
+            <p id="user_name"></p>
+        </div>
+        <div class="button-wrapper">
+            <button id="sign_button" class="c-button">Login</button>
+        </div>
+
+    </div>
+</header>
+    <div class="content"></div>
+<div class="footer" align="center">2023</div>
+</body>
+</html>

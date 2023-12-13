@@ -1,0 +1,12 @@
+[tool.black]
+line-length = 120
+
+[tool.isort]
+src_paths = [
+    "**/src",
+    "**/tests",
+    "service_auth/src/app",
+    "service_auth/src/tests"
+]
+line_length = 120
+profile = "black"
